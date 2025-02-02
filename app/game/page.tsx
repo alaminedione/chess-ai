@@ -1,4 +1,3 @@
-// components/chess/ChessGame.tsx
 "use client";
 import { useState } from 'react';
 import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
@@ -75,9 +74,9 @@ export default function ChessGame() {
 
         {/* Contrôles Centrés */}
         <div className="w-full flex flex-col sm:flex-row justify-center gap-3 mt-6">
-          <Button variant="default" className="gap-2 sm:w-auto">
+          <div className="gap-2 sm:w-auto">
             <NewGameModal />
-          </Button>
+          </div>
           <Button variant="secondary" className="gap-2 sm:w-auto">
             <FiCornerUpLeft className="w-4 h-4" />
             <span>Annuler Coup</span>

@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* @import "chessboardjs/dist/chessboard-1.0.0.min.css"; */
 
 body {
   font-family: Arial, Helvetica, sans-serif;
@@ -69,4 +70,11 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.chessboard {
+  --board-color: hsl(var(--background));
+  --border-color: hsl(var(--border));
+  --piece-color: hsl(var(--foreground));
+  --highlight-color: hsl(var(--primary) / 0.3);
 }
