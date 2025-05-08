@@ -1,16 +1,6 @@
 "use client";
-import { useState, useEffect, useMemo } from 'react';
-import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
-import { Button } from '@/components/ui/button';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { NewGameModal } from '@/components/NewGameModal';
-import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js';
-
-"use client";
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
+import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft, FiX } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -57,7 +47,7 @@ export default function ChessGame() {
 
       formattedMoves.push({
         moveNumber: moveNumber,
-        white: whiteMove.san,
+        white: whiteMove ? whiteMove.san : '',
         black: blackMove ? blackMove.san : '',
       });
     }
