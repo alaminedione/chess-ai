@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -8,39 +8,68 @@ import { NewGameModal } from '@/components/NewGameModal';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
-const exampleMoves = [
-  { moveNumber: 1, white: 'e4', black: 'e5' },
-  { moveNumber: 2, white: 'Nf3', black: 'Nc6' },
-  { moveNumber: 3, white: 'Bc4', black: 'Bc5' },
-];
-
 export default function ChessGame() {
   const [game, setGame] = useState(new Chess());
-  const [moves, setMoves] = useState(exampleMoves); // Keep mock moves for now
-  const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white'); // This should probably come from game state
+  const [moves, setMoves] = useState([]); // Start with empty moves
 
-  // Helper to update game state
+  // Helper to update game state and return the result of the modification
   function safeGameMutate(modify) {
     setGame((g) => {
       const newGame = new Chess(g.fen());
-      modify(newGame);
-      return newGame;
+      const moveResult = modify(newGame);
+      return newGame; // Return the new game object for state update
     });
   }
 
+  // Update moves history based on current game state
+  const updateMovesHistory = () => {
+    const history = game.history({ verbose: true });
+    const formattedMoves = [];
+    for (let i = 0; i < history.length; i += 2) {
+      const moveNumber = Math.floor(i / 2) + 1;
+      const whiteMove = history[i];
+      const blackMove = history[i + 1];
+
+      formattedMoves.push({
+        moveNumber: moveNumber,
+        white: whiteMove.san,
+        black: blackMove ? blackMove.san : '',
+      });
+    }
+    setMoves(formattedMoves);
+  };
+
   // Example move handler (will need more logic later)
   function onDrop(sourceSquare, targetSquare) {
-    const move = safeGameMutate((game) => {
-      game.move({
+    let move = null;
+    safeGameMutate((game) => {
+      move = game.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q', // always promote to queen for simplicity
       });
     });
-    // TODO: Update moves history based on actual game moves
-    // TODO: Handle turn change based on game state
-    return move; // Return move object if valid, null if invalid
+
+    // If the move is invalid, return null
+    if (move === null) return null;
+
+    // If the move is valid, update the moves history
+    // The game state is updated asynchronously by setGame.
+    // We need to wait for the state update to reflect the new history.
+    // The useEffect below handles updating the history whenever the game state changes.
+
+    // TODO: Check for game over conditions
+
+    return move; // Return move object if valid
   }
+
+  // Update history whenever the game state changes
+  useEffect(() => {
+    updateMovesHistory();
+  }, [game]); // Dependency on game ensures it runs after state updates
+
+  // Determine current player for UI indicator
+  const currentPlayer = game.turn() === 'w' ? 'white' : 'black';
 
 
   return (
