@@ -52,8 +52,8 @@ export default function ChessGame() {
               ${currentPlayer === 'white' ? 'border-primary/30' : 'border-muted'}
             `}>
               <div className="w-full h-full flex items-center justify-center">
-                {/* <span className="text-muted-foreground">Échiquier</span> */}
-                <ChessGame />
+                {/* Placeholder for the chessboard component */}
+                <div className="text-muted-foreground text-lg">Chessboard Placeholder</div>
               </div>
             </div>
           </div>

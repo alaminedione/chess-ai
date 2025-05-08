@@ -17,7 +17,7 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-// import { GameModeSwitcher } from "@/components/game-mode-switcher"
+import { GameModeSwitcher } from "@/components/game-mode-switcher"
 import { NavMatches } from "@/components/nav-matches"
 import {
   Sidebar,
@@ -188,6 +188,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="space-y-6">
+        <GameModeSwitcher modes={chessData.gameModes} />
         <NavMain
           items={chessData.navMain}
           className="[&_.active]:bg-primary/10 [&_.active]:text-primary"
