@@ -235,12 +235,22 @@ export default function ChessGame() {
 
       {/* Conteneur Principal */}
       <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
+
+        {/* Game Mode Display */}
+        <Card className="w-full max-w-[400px] text-center">
+          <CardContent className="p-3">
+            <p className="text-lg font-semibold">{gameType}</p>
+          </CardContent>
+        </Card>
+
         {/* Joueur Noir - En Haut */}
         <Card className="w-full max-w-[400px] mb-4">
           <CardHeader className="flex flex-row items-center justify-between p-3">
             <div className="flex items-center gap-2">
               <FiUser className="w-4 h-4 text-muted-foreground" />
-              <CardTitle className="text-base">Noir</CardTitle>
+              <CardTitle className="text-base">
+                {gameType === GameType.Human_vs_AI ? 'IA' : 'IA (Noir)'}
+              </CardTitle>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <FiClock className="w-4 h-4" />
@@ -307,7 +317,9 @@ export default function ChessGame() {
           <CardHeader className="flex flex-row items-center justify-between p-3">
             <div className="flex items-center gap-2">
               <FiUser className="w-4 h-4 text-muted-foreground" />
-              <CardTitle className="text-base">Blanc</CardTitle>
+              <CardTitle className="text-base">
+                 {gameType === GameType.Human_vs_AI ? 'Humain' : 'IA (Blanc)'}
+              </CardTitle>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <FiClock className="w-4 h-4" />
