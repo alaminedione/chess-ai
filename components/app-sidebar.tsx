@@ -26,12 +26,12 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { user, gameMode, gameDifficulty, gameType, Match } from "@/lib/types"
+import { User as UserType, GameMode, GameType, Match, MatchStatus, GameDifficulty } from "@/lib/types" // Use alias for User type
 
 interface IChessData {
-  user: user,
-  gameModes: gameMode[],
-  currentMatches: Match[],
+  user: UserType, // Use aliased User type
+  gameModes: GameMode[], // Use GameMode type
+  currentMatches: Match[], // Use Match type
   navMain: {
     title: string
     url: string
@@ -46,8 +46,6 @@ interface IChessData {
 
 }
 
-
-
 const chessData: IChessData = {
   user: {
     name: "Joueur d'Échecs",
@@ -56,19 +54,19 @@ const chessData: IChessData = {
   },
   gameModes: [
     {
-      name: gameType.Humain_vs_AI,
+      name: GameType.Human_vs_AI,
       icon: User,
-      difficulty: gameDifficulty.Adaptatif,
+      // Difficulty is now selected per AI in the modal
     },
     {
-      name: gameType.AI_vs_AI,
+      name: GameType.AI_vs_AI,
       icon: Cpu,
-      difficulty: gameDifficulty.Expert,
+      // Difficulty is now selected per AI in the modal
     },
     {
-      name: gameType.Analyse_de_partie,
+      name: GameType.Analysis,
       icon: BarChart,
-      difficulty: gameDifficulty.none,
+      // Difficulty is not applicable here
     },
   ],
   navMain: [
@@ -160,19 +158,19 @@ const chessData: IChessData = {
     //   name: "Match #1 vs Stockfish",
     //   url: "#",
     //   icon: Crosshair,
-    //   status: matchStatus.En_cours
+    //   status: MatchStatus.InProgress
     // },
     // {
     //   name: "Tournoi Quotidien",
     //   url: "#",
     //   icon: Trophy,
-    //   status: matchStatus.Inscrit
+    //   status: MatchStatus.Registered
     // },
     // {
     //   name: "Analyse de partie",
     //   url: "#",
     //   icon: BookOpen,
-    //   status: matchStatus.Termine
+    //   status: MatchStatus.Finished
     // },
   ],
 }
@@ -188,6 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="space-y-6">
+        {/* GameModeSwitcher no longer needs difficulty prop */}
         <GameModeSwitcher modes={chessData.gameModes} />
         <NavMain
           items={chessData.navMain}

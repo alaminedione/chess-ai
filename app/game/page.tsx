@@ -8,6 +8,7 @@ import { NewGameModal } from '@/components/NewGameModal';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
+"use client";
 import { useState, useEffect, useMemo } from 'react';
 import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { NewGameModal } from '@/components/NewGameModal';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { findBestMove } from '@/lib/ai'; // Import the new AI function
+import { GameDifficulty, difficultyToDepth } from '@/lib/types'; // Import difficulty types
 
 type GameStatus = 'playing' | 'checkmate' | 'stalemate' | 'threefold repetition' | 'insufficient material' | 'fifty-move rule' | 'draw' | 'resignation';
 
@@ -25,6 +27,7 @@ export default function ChessGame() {
   const [moves, setMoves] = useState([]); // Start with empty moves
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [isAITurn, setIsAITurn] = useState(false); // State to manage AI turn
+  const [aiDifficulty, setAiDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // State to store selected AI difficulty
 
   // Helper to update game state and return the result of the modification
   function safeGameMutate(modify) {
@@ -75,7 +78,8 @@ export default function ChessGame() {
   // AI move function using the minimax algorithm
   const makeAIMove = () => {
     setIsAITurn(true); // Indicate AI is thinking
-    const bestMove = findBestMove(game, 2); // Use minimax with depth 2
+    const depth = difficultyToDepth[aiDifficulty]; // Get depth from selected difficulty
+    const bestMove = findBestMove(game, depth);
 
     if (bestMove) {
       safeGameMutate((game) => {
@@ -116,12 +120,13 @@ export default function ChessGame() {
     return true; // Return move object if valid
   }
 
-  // Reset game state
-  const resetGame = () => {
+  // Reset game state and set new difficulty
+  const resetGame = (difficulty: GameDifficulty = GameDifficulty.Medium) => {
     setGame(new Chess());
     setMoves([]);
     setGameStatus('playing');
     setIsAITurn(false); // Reset AI turn state
+    setAiDifficulty(difficulty); // Set the new difficulty
   };
 
   // Update history and check game over whenever the game state changes
@@ -217,11 +222,8 @@ export default function ChessGame() {
 
         {/* Contrôles Centrés */}
         <div className="w-full flex flex-col sm:flex-row justify-center gap-3 mt-6">
-          {/* Modified NewGameModal trigger to reset game */}
-          <Button variant="default" className="gap-2 sm:w-auto" onClick={resetGame}>
-            <FiRotateCw className="w-4 h-4" />
-            Nouvelle Partie
-          </Button>
+          {/* NewGameModal now handles game reset internally */}
+          <NewGameModal />
           <Button variant="secondary" className="gap-2 sm:w-auto">
             <FiCornerUpLeft className="w-4 h-4" />
             <span>Annuler Coup</span>
@@ -250,6 +252,7 @@ export default function ChessGame() {
                     <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
                       <span className="font-medium text-center">Tour</span>
                       <span className="font-medium text-center">Blanc</span>
+                      <span className="text-center bg-muted p-1 rounded">e4</span>
                       <span className="font-medium text-center">Noir</span>
 
                       {moves.map((move, index) => (

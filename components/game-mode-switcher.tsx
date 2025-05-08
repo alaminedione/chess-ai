@@ -17,9 +17,9 @@ import {
   CommandItem,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
-import { gameMode } from "@/lib/types"
+import { GameMode } from "@/lib/types" // Use GameMode type
 
-export function GameModeSwitcher({ modes }: { modes: gameMode[] }) {
+export function GameModeSwitcher({ modes }: { modes: GameMode[] }) {
   const [open, setOpen] = React.useState(false)
   const [selectedMode, setSelectedMode] = React.useState(modes[0])
 
@@ -35,9 +35,10 @@ export function GameModeSwitcher({ modes }: { modes: gameMode[] }) {
           <div className="flex items-center gap-3">
             <selectedMode.icon className="h-5 w-5 text-primary" />
             <span className="truncate">{selectedMode.name}</span>
-            <span className="text-muted-foreground text-xs ml-2">
+            {/* Difficulty is no longer displayed here */}
+            {/* <span className="text-muted-foreground text-xs ml-2">
               {selectedMode.difficulty}
-            </span>
+            </span> */}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -65,9 +66,10 @@ export function GameModeSwitcher({ modes }: { modes: gameMode[] }) {
                   <mode.icon className="h-5 w-5" />
                   <div className="flex flex-col">
                     <span>{mode.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    {/* Difficulty is no longer displayed here */}
+                    {/* <span className="text-xs text-muted-foreground">
                       {mode.difficulty}
-                    </span>
+                    </span> */}
                   </div>
                 </div>
               </CommandItem>
