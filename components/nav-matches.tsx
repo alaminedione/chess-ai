@@ -4,7 +4,7 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { Match, matchStatus } from "@/lib/types"
+import { Match, MatchStatus } from "@/lib/types"
 
 
 type NavMatchesProps = {
@@ -37,12 +37,12 @@ export function NavMatches({ matches, title, className }: NavMatchesProps) {
               </div>
               <Badge
                 variant={
-                  match.status === matchStatus.En_cours ? "default" :
-                    match.status === matchStatus.Termine ? "secondary" : "outline"
+                  match.status === MatchStatus.InProgress ? "default" :
+                    match.status === MatchStatus.Finished ? "secondary" : "outline"
                 }
                 className={cn(
                   "text-xs capitalize",
-                  match.status === matchStatus.Inscrit && "border-yellow-300 text-yellow-300 bg-yellow-300/10"
+                  match.status === MatchStatus.Registered && "border-yellow-300 text-yellow-300 bg-yellow-300/10"
                 )}
               >
                 {match.status}
