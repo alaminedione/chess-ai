@@ -23,39 +23,47 @@ const availableDifficulties = [
   GameDifficulty.Expert,
 ];
 
-export function NewGameModal() {
+interface NewGameModalProps {
+  onStartGame: (
+    gameType: GameType,
+    humanAIDifficulty?: GameDifficulty,
+    ai1Difficulty?: GameDifficulty,
+    ai2Difficulty?: GameDifficulty
+  ) => void;
+}
+
+export function NewGameModal({ onStartGame }: NewGameModalProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [gameType, setGameType] = useState<GameType>(GameType.Human_vs_AI);
   const [selectedAI1, setSelectedAI1] = useState<string>('');
   const [selectedAI2, setSelectedAI2] = useState<string>('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Default difficulty
+  const [selectedDifficulty, setSelectedDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Default difficulty for Human vs AI
+  const [selectedAI1Difficulty, setSelectedAI1Difficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Difficulty for AI 1 in AI vs AI
+  const [selectedAI2Difficulty, setSelectedAI2Difficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Difficulty for AI 2 in AI vs AI
+
 
   const handleStartGame = () => {
-    // Find the selected AI models
+    // Find the selected AI models (optional for Human vs AI, required for AI vs AI)
     const ai1 = mockAIModels.find(m => m.id === selectedAI1);
     const ai2 = gameType === GameType.AI_vs_AI ? mockAIModels.find(m => m.id === selectedAI2) : null;
 
-    if (!ai1 || (gameType === GameType.AI_vs_AI && !ai2)) {
-      // Should not happen if button is disabled, but good practice
-      console.error("Invalid AI selection");
-      return;
+    if (gameType === GameType.AI_vs_AI && (!ai1 || !ai2)) {
+       console.error("Both AIs must be selected for AI vs AI game.");
+       return; // Prevent starting if AIs are not selected in AI vs AI mode
+    }
+     if (gameType === GameType.Human_vs_AI && !ai1) {
+       console.error("An AI must be selected for Human vs AI game.");
+       return; // Prevent starting if AI is not selected in Human vs AI mode
     }
 
-    // Determine the search depth based on selected difficulty
-    const searchDepth = difficultyToDepth[selectedDifficulty];
 
-    // In a real app, you would navigate to the game page and pass parameters
-    // For now, we'll just close the modal and log the selections.
-    console.log("Starting new game:", {
-      gameType,
-      ai1: ai1.name,
-      ai2: ai2?.name,
-      difficulty: selectedDifficulty,
-      searchDepth,
-    });
+    // Call the onStartGame function passed from the parent component
+    if (gameType === GameType.Human_vs_AI) {
+      onStartGame(gameType, selectedDifficulty);
+    } else if (gameType === GameType.AI_vs_AI) {
+      onStartGame(gameType, undefined, selectedAI1Difficulty, selectedAI2Difficulty);
+    }
 
-    // TODO: Implement actual game start logic and navigation
-    // Example: router.push(`/game?type=${gameType}&ai1=${selectedAI1}&ai2=${selectedAI2 || ''}&depth=${searchDepth}`);
 
     setIsDialogOpen(false);
   };
@@ -68,6 +76,8 @@ export function NewGameModal() {
       setSelectedAI1('');
       setSelectedAI2('');
       setSelectedDifficulty(GameDifficulty.Medium); // Reset to default difficulty
+      setSelectedAI1Difficulty(GameDifficulty.Medium); // Reset AI vs AI difficulties
+      setSelectedAI2Difficulty(GameDifficulty.Medium);
     }
   };
 
@@ -104,33 +114,36 @@ export function NewGameModal() {
           </div>
 
           {/* Sélection IA 1 */}
-          <div className="space-y-2">
-            <Label htmlFor="ai-1">
-              {gameType === GameType.Human_vs_AI ? 'IA Adverse' : 'Première IA'}
-            </Label>
-            <Select onValueChange={setSelectedAI1} value={selectedAI1}>
-              <SelectTrigger id="ai-1">
-                <SelectValue placeholder="Sélectionnez une IA" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockAIModels.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div className="flex flex-col">
-                      <span>{model.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                          {model.description} (ELO: {model.strength})
-                        </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {(gameType === GameType.Human_vs_AI || gameType === GameType.AI_vs_AI) && (
+            <div className="space-y-2">
+              <Label htmlFor="ai-1">
+                {gameType === GameType.Human_vs_AI ? 'IA Adverse' : 'Première IA (Blanc)'}
+              </Label>
+              <Select onValueChange={setSelectedAI1} value={selectedAI1}>
+                <SelectTrigger id="ai-1">
+                  <SelectValue placeholder="Sélectionnez une IA" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockAIModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      <div className="flex flex-col">
+                        <span>{model.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                            {model.description} (ELO: {model.strength})
+                          </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
 
           {/* Sélection IA 2 (seulement pour AI vs AI) */}
           {gameType === GameType.AI_vs_AI && (
             <div className="space-y-2">
-              <Label htmlFor="ai-2">Deuxième IA</Label>
+              <Label htmlFor="ai-2">Deuxième IA (Noir)</Label>
               <Select onValueChange={setSelectedAI2} value={selectedAI2}>
                 <SelectTrigger id="ai-2">
                   <SelectValue placeholder="Sélectionnez une IA" />
@@ -151,8 +164,8 @@ export function NewGameModal() {
             </div>
           )}
 
-          {/* Sélection de la difficulté (seulement pour Human vs AI) */}
-          {gameType === GameType.Human_vs_AI && selectedAI1 && (
+          {/* Sélection de la difficulté (pour Human vs AI ou AI vs AI) */}
+          {(gameType === GameType.Human_vs_AI && selectedAI1) && (
              <div className="space-y-2">
               <Label htmlFor="difficulty">Difficulté de l'IA</Label>
               <Select onValueChange={(v) => setSelectedDifficulty(v as GameDifficulty)} value={selectedDifficulty}>
@@ -170,11 +183,50 @@ export function NewGameModal() {
             </div>
           )}
 
+           {gameType === GameType.AI_vs_AI && selectedAI1 && (
+             <div className="space-y-2">
+              <Label htmlFor="ai1-difficulty">Difficulté IA Blanc</Label>
+              <Select onValueChange={(v) => setSelectedAI1Difficulty(v as GameDifficulty)} value={selectedAI1Difficulty}>
+                <SelectTrigger id="ai1-difficulty">
+                  <SelectValue placeholder="Sélectionnez une difficulté" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDifficulties.map((difficulty) => (
+                    <SelectItem key={difficulty} value={difficulty}>
+                      {difficulty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+           {gameType === GameType.AI_vs_AI && selectedAI2 && (
+             <div className="space-y-2">
+              <Label htmlFor="ai2-difficulty">Difficulté IA Noir</Label>
+              <Select onValueChange={(v) => setSelectedAI2Difficulty(v as GameDifficulty)} value={selectedAI2Difficulty}>
+                <SelectTrigger id="ai2-difficulty">
+                  <SelectValue placeholder="Sélectionnez une difficulté" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDifficulties.map((difficulty) => (
+                    <SelectItem key={difficulty} value={difficulty}>
+                      {difficulty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
 
           <Button
             className="w-full mt-4"
             onClick={handleStartGame}
-            disabled={!selectedAI1 || (gameType === GameType.AI_vs_AI && !selectedAI2)}
+            disabled={
+              (gameType === GameType.Human_vs_AI && !selectedAI1) ||
+              (gameType === GameType.AI_vs_AI && (!selectedAI1 || !selectedAI2))
+            }
           >
             Commencer la partie
           </Button>
@@ -183,5 +235,4 @@ export function NewGameModal() {
     </Dialog>
   );
 }
-
 

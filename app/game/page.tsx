@@ -9,7 +9,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -18,7 +18,7 @@ import { NewGameModal } from '@/components/NewGameModal';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { findBestMove } from '@/lib/ai'; // Import the new AI function
-import { GameDifficulty, difficultyToDepth } from '@/lib/types'; // Import difficulty types
+import { GameDifficulty, difficultyToDepth, GameType } from '@/lib/types'; // Import difficulty and game type
 
 type GameStatus = 'playing' | 'checkmate' | 'stalemate' | 'threefold repetition' | 'insufficient material' | 'fifty-move rule' | 'draw' | 'resignation';
 
@@ -27,7 +27,10 @@ export default function ChessGame() {
   const [moves, setMoves] = useState([]); // Start with empty moves
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [isAITurn, setIsAITurn] = useState(false); // State to manage AI turn
-  const [aiDifficulty, setAiDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // State to store selected AI difficulty
+  const [aiDifficulty, setAiDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // State to store selected AI difficulty for Human vs AI
+  const [gameType, setGameType] = useState<GameType>(GameType.Human_vs_AI); // State to store the current game type
+  const [whiteAIDifficulty, setWhiteAIDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Difficulty for White AI in AI vs AI
+  const [blackAIDifficulty, setBlackAIDifficulty] = useState<GameDifficulty>(GameDifficulty.Medium); // Difficulty for Black AI in AI vs AI
   const [isInvalidMove, setIsInvalidMove] = useState(false); // State to track invalid moves
 
   // Helper to update game state and return the result of the modification
@@ -77,24 +80,38 @@ export default function ChessGame() {
   };
 
   // AI move function using the minimax algorithm
-  const makeAIMove = () => {
-    setIsAITurn(true); // Indicate AI is thinking
-    const depth = difficultyToDepth[aiDifficulty]; // Get depth from selected difficulty
-    const bestMove = findBestMove(game, depth);
+  const makeAIMove = useCallback(() => {
+    // Determine which AI's turn it is and get the corresponding difficulty
+    const currentAIDifficulty = game.turn() === 'w' ? whiteAIDifficulty : blackAIDifficulty;
+    const depth = difficultyToDepth[currentAIDifficulty];
 
-    if (bestMove) {
-      safeGameMutate((game) => {
-        game.move(bestMove);
-      });
+    // Exit if the game is over or no moves are possible
+    if (game.isGameOver() || game.isDraw() || game.moves().length === 0) {
+      checkGameOver();
+      setIsAITurn(false); // Ensure AI turn indicator is off
+      return;
     }
-    setIsAITurn(false); // AI turn ends
-  };
+
+    setIsAITurn(true); // Indicate AI is thinking
+
+    // Use a timeout to simulate thinking time and allow UI to update
+    setTimeout(() => {
+      const bestMove = findBestMove(game, depth);
+
+      if (bestMove) {
+        safeGameMutate((game) => {
+          game.move(bestMove);
+        });
+      }
+      setIsAITurn(false); // AI turn ends
+    }, 300); // Simulate AI thinking time
+  }, [game, whiteAIDifficulty, blackAIDifficulty, safeGameMutate, checkGameOver]);
 
 
   // Example move handler (will need more logic later)
   function onDrop(sourceSquare, targetSquare) {
-    // Prevent moves if the game is over or it's AI's turn
-    if (game.isGameOver() || gameStatus !== 'playing' || isAITurn) return false;
+    // Prevent moves if the game is over, it's AI's turn, or the game type is AI vs AI
+    if (game.isGameOver() || gameStatus !== 'playing' || isAITurn || gameType === GameType.AI_vs_AI) return false;
 
     let move = null;
     safeGameMutate((game) => {
@@ -114,9 +131,8 @@ export default function ChessGame() {
     // Check for game over after human move
     checkGameOver();
 
-    // Trigger AI move after a short delay if the game is not over and it's AI's turn
-    // The game.turn() check ensures AI only moves when it's their turn (Black in this case)
-    if (!game.isGameOver() && game.turn() === 'b') {
+    // Trigger AI move after a short delay if the game is not over and it's AI's turn (Black in Human vs AI)
+    if (!game.isGameOver() && game.turn() === 'b' && gameType === GameType.Human_vs_AI) {
       setTimeout(makeAIMove, 300); // Simulate AI thinking time
     }
 
@@ -126,8 +142,8 @@ export default function ChessGame() {
 
   // Undo the last move
   const undoLastMove = () => {
-    // Prevent undo if it's AI's turn or game is over
-    if (isAITurn || game.isGameOver()) return;
+    // Prevent undo if it's AI's turn or game is over or in AI vs AI mode
+    if (isAITurn || game.isGameOver() || gameType === GameType.AI_vs_AI) return;
 
     // If the last move was an AI move, undo twice to get back to human's turn
     if (game.history().length > 0 && game.history({ verbose: true }).slice(-1)[0].color === 'b') {
@@ -144,14 +160,35 @@ export default function ChessGame() {
     setIsInvalidMove(false); // Reset invalid move state on undo
   };
 
-  // Reset game state and set new difficulty
-  const resetGame = (difficulty: GameDifficulty = GameDifficulty.Medium) => {
+  // Start AI vs AI game
+  const startAIVsAIGame = useCallback(() => {
+    // Ensure the game is not already over before starting AI moves
+    if (!game.isGameOver() && game.moves().length > 0) {
+      makeAIMove(); // Trigger the first AI move (White)
+    }
+  }, [game, makeAIMove]);
+
+
+  // Reset game state and set new game parameters
+  const resetGame = (
+    type: GameType = GameType.Human_vs_AI,
+    humanAIDifficulty: GameDifficulty = GameDifficulty.Medium,
+    ai1Difficulty: GameDifficulty = GameDifficulty.Medium, // Difficulty for White AI in AI vs AI
+    ai2Difficulty: GameDifficulty = GameDifficulty.Medium // Difficulty for Black AI in AI vs AI
+  ) => {
     setGame(new Chess());
     setMoves([]);
     setGameStatus('playing');
     setIsAITurn(false); // Reset AI turn state
-    setAiDifficulty(difficulty); // Set the new difficulty
     setIsInvalidMove(false); // Reset invalid move state
+    setGameType(type); // Set the new game type
+
+    if (type === GameType.Human_vs_AI) {
+      setAiDifficulty(humanAIDifficulty);
+    } else if (type === GameType.AI_vs_AI) {
+      setWhiteAIDifficulty(ai1Difficulty);
+      setBlackAIDifficulty(ai2Difficulty);
+    }
   };
 
   // Effect to clear invalid move message after a delay
@@ -164,11 +201,29 @@ export default function ChessGame() {
     }
   }, [isInvalidMove]); // Dependency on isInvalidMove
 
+  // Effect to trigger AI moves in AI vs AI mode
+  useEffect(() => {
+    if (gameType === GameType.AI_vs_AI && gameStatus === 'playing' && !isAITurn) {
+      // Trigger the next AI move after the game state updates
+      // This useEffect runs after safeGameMutate updates the game state
+      makeAIMove();
+    }
+  }, [game, gameType, gameStatus, isAITurn, makeAIMove]); // Dependencies on game, gameType, gameStatus, isAITurn, makeAIMove
+
+  // Effect to start AI vs AI game when the mode is set
+  useEffect(() => {
+    if (gameType === GameType.AI_vs_AI) {
+      startAIVsAIGame();
+    }
+  }, [gameType, startAIVsAIGame]); // Dependency on gameType and startAIVsAIGame
+
+
   // Update history and check game over whenever the game state changes
   useEffect(() => {
     updateMovesHistory();
     checkGameOver();
-  }, [game]); // Dependency on game ensures it runs after state updates
+  }, [game, updateMovesHistory, checkGameOver]); // Dependency on game and helper functions
+
 
   // Determine current player for UI indicator
   const currentPlayer = game.turn() === 'w' ? 'white' : 'black';
@@ -212,7 +267,7 @@ export default function ChessGame() {
                 position={game.fen()}
                 onPieceDrop={onDrop}
                 boardWidth={Math.min(window.innerWidth * 0.9, 400)} // Responsive width
-                arePiecesDraggable={!game.isGameOver() && gameStatus === 'playing' && !isAITurn} // Disable drag during AI turn or game over
+                arePiecesDraggable={gameType === GameType.Human_vs_AI && !game.isGameOver() && gameStatus === 'playing' && !isAITurn} // Disable drag in AI vs AI or during AI turn or game over
              />
           </div>
         </div>
@@ -268,12 +323,12 @@ export default function ChessGame() {
         {/* Contrôles Centrés */}
         <div className="w-full flex flex-col sm:flex-row justify-center gap-3 mt-6">
           {/* NewGameModal now handles game reset internally */}
-          <NewGameModal />
+          <NewGameModal onStartGame={resetGame} /> {/* Pass resetGame function */}
           <Button
             variant="secondary"
             className="gap-2 sm:w-auto"
             onClick={undoLastMove}
-            disabled={game.history().length === 0 || isAITurn || game.isGameOver()} // Disable if no moves or AI turn or game over
+            disabled={game.history().length === 0 || isAITurn || game.isGameOver() || gameType === GameType.AI_vs_AI} // Disable if no moves or AI turn or game over or AI vs AI
           >
             <FiCornerUpLeft className="w-4 h-4" />
             <span>Annuler Coup</span>
