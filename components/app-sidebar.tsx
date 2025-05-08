@@ -74,23 +74,23 @@ const chessData: IChessData = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/", // Link to home page
       icon: Crown,
-      isActive: true,
+      isActive: true, // Consider making this dynamic based on current route
       items: [
         {
           title: "Partie en cours",
-          url: "#",
+          url: "/game", // Link to game page
           icon: Crosshair,
         },
         {
           title: "Statistiques",
-          url: "#",
+          url: "#", // Placeholder
           icon: Trophy,
         },
         {
           title: "Historique",
-          url: "#",
+          url: "#", // Placeholder
           icon: Clock,
         },
       ],
@@ -98,25 +98,25 @@ const chessData: IChessData = {
     {
 
       title: "Modèles IA",
-      isActive: true,
-      url: "#",
+      isActive: true, // Consider making this dynamic
+      url: "/ai-models", // Link to AI models page
       icon: Bot,
       items: [
         {
           title: "Mes Modèles",
-          url: "#",
+          url: "/ai-models", // Link to AI models page
         },
       ],
     },
     {
       title: "Matchs",
-      isActive: true,
-      url: "#",
+      isActive: true, // Consider making this dynamic
+      url: "#", // Placeholder
       icon: Sword,
       items: [
         {
           title: "Créer un match",
-          url: "#",
+          url: "#", // Placeholder
           icon: BookOpen,
         },
         // {
@@ -133,13 +133,13 @@ const chessData: IChessData = {
     },
     {
       title: "Paramètres",
-      isActive: true,
-      url: "#",
+      isActive: true, // Consider making this dynamic
+      url: "#", // Placeholder
       icon: Settings2,
       items: [
         {
           title: "Profil",
-          url: "#",
+          url: "#", // Placeholder
           icon: User,
         },
         // {

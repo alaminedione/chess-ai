@@ -1,11 +1,13 @@
 // components/chess/ChessGame.tsx
 "use client";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { NewGameModal } from '@/components/NewGameModal';
+import { Chessboard } from 'react-chessboard';
+import { Chess } from 'chess.js';
 
 const exampleMoves = [
   { moveNumber: 1, white: 'e4', black: 'e5' },
@@ -14,8 +16,33 @@ const exampleMoves = [
 ];
 
 export default function ChessGame() {
-  const [moves, setMoves] = useState(exampleMoves);
-  const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white');
+  const [game, setGame] = useState(new Chess());
+  const [moves, setMoves] = useState(exampleMoves); // Keep mock moves for now
+  const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white'); // This should probably come from game state
+
+  // Helper to update game state
+  function safeGameMutate(modify) {
+    setGame((g) => {
+      const newGame = new Chess(g.fen());
+      modify(newGame);
+      return newGame;
+    });
+  }
+
+  // Example move handler (will need more logic later)
+  function onDrop(sourceSquare, targetSquare) {
+    const move = safeGameMutate((game) => {
+      game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q', // always promote to queen for simplicity
+      });
+    });
+    // TODO: Update moves history based on actual game moves
+    // TODO: Handle turn change based on game state
+    return move; // Return move object if valid, null if invalid
+  }
+
 
   return (
     <div className="min-h-screen overflow-hidden flex flex-col px-4 py-6"
@@ -36,7 +63,8 @@ export default function ChessGame() {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <div className={`h-1 rounded-full ${currentPlayer === 'black' ? 'bg-primary' : 'bg-muted'}`} />
+            {/* Use game.turn() to determine active player */}
+            <div className={`h-1 rounded-full ${game.turn() === 'b' ? 'bg-primary' : 'bg-muted'}`} />
           </CardContent>
         </Card>
 
@@ -48,11 +76,13 @@ export default function ChessGame() {
             xs:max-w-[320px]
             sm:max-w-[360px]
             md:max-w-[400px]
-            ${currentPlayer === 'white' ? 'border-primary/20' : 'border-muted'}
+            ${game.turn() === 'w' ? 'border-primary/20' : 'border-muted'}
           `}>
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-muted-foreground">Échiquier</span>
-            </div>
+             <Chessboard
+                position={game.fen()}
+                onPieceDrop={onDrop}
+                boardWidth={Math.min(window.innerWidth * 0.9, 400)} // Responsive width
+             />
           </div>
         </div>
 
@@ -69,7 +99,8 @@ export default function ChessGame() {
             </div>
           </CardHeader>
           <CardContent className="p-3 pt-0">
-            <div className={`h-1 rounded-full ${currentPlayer === 'white' ? 'bg-primary' : 'bg-muted'}`} />
+             {/* Use game.turn() to determine active player */}
+            <div className={`h-1 rounded-full ${game.turn() === 'w' ? 'bg-primary' : 'bg-muted'}`} />
           </CardContent>
         </Card>
 
