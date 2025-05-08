@@ -23,12 +23,19 @@ export function NewGameModal() {
     const ai1 = mockAIModels.find(m => m.id === selectedAI1);
     const ai2 = gameType === 'ai-vs-ai' ? mockAIModels.find(m => m.id === selectedAI2) : null;
 
-    alert(`Démarrage de la partie avec :
-      ${gameType === 'human-vs-ai' ? 'Joueur vs ' + ai1?.name : ai1?.name + ' vs ' + ai2?.name}`);
+    // Simulation de démarrage de partie
+    const ai1 = mockAIModels.find(m => m.id === selectedAI1);
+    const ai2 = gameType === 'ai-vs-ai' ? mockAIModels.find(m => m.id === selectedAI2) : null;
+
+    // In a real app, you would navigate to the game page and pass parameters
+    // For now, we'll just close the modal.
+    setIsDialogOpen(false);
+    // Example navigation (requires useRouter hook)
+    // router.push(`/game?type=${gameType}&ai1=${selectedAI1}${ai2 ? `&ai2=${selectedAI2}` : ''}`);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="default" className="gap-2">
           <FiRotateCw className="w-4 h-4" />

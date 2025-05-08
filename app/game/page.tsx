@@ -1,10 +1,12 @@
 "use client";
-import { useState } from 'react';
-import { FiClock, FiUser, FiChevronDown, FiCornerUpLeft } from 'react-icons/fi';
+import { useState, useMemo } from 'react';
+import { FiClock, FiUser, FiChevronDown, FiRotateCw, FiCornerUpLeft } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { NewGameModal } from '@/components/NewGameModal';
+import { Chessboard } from 'react-chessboard';
+import { Chess } from 'chess.js';
 
 const exampleMoves = [
   { moveNumber: 1, white: 'e4', black: 'e5' },
@@ -13,125 +15,143 @@ const exampleMoves = [
 ];
 
 export default function ChessGame() {
-  const [moves, setMoves] = useState(exampleMoves);
-  const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white');
+  const [game, setGame] = useState(new Chess());
+  const [moves, setMoves] = useState(exampleMoves); // Keep mock moves for now
+  const [currentPlayer, setCurrentPlayer] = useState<'white' | 'black'>('white'); // This should probably come from game state
+
+  // Helper to update game state
+  function safeGameMutate(modify) {
+    setGame((g) => {
+      const newGame = new Chess(g.fen());
+      modify(newGame);
+      return newGame;
+    });
+  }
+
+  // Example move handler (will need more logic later)
+  function onDrop(sourceSquare, targetSquare) {
+    const move = safeGameMutate((game) => {
+      game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q', // always promote to queen for simplicity
+      });
+    });
+    // TODO: Update moves history based on actual game moves
+    // TODO: Handle turn change based on game state
+    return move; // Return move object if valid, null if invalid
+  }
+
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Layout Principal */}
-      <div className="flex-1 grid lg:grid-cols-2 lg:grid-rows-[auto_1fr] gap-4 p-4">
-        {/* Colonne Gauche - Joueurs + Échiquier */}
-        <div className="h-full flex flex-col gap-4 mx-auto w-full max-w-[800px]">
-          {/* Joueur Noir */}
-          <Card className="w-full">
-            <CardHeader className="flex flex-row items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <FiUser className="w-5 h-5 text-muted-foreground" />
-                <CardTitle className="text-lg font-semibold">Noir</CardTitle>
-              </div>
-              <div className="flex items-center gap-3 text-base">
-                <FiClock className="w-5 h-5" />
-                <span className="font-medium">15:00</span>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className={`h-2 rounded-full ${currentPlayer === 'black' ? 'bg-primary' : 'bg-muted'}`} />
-            </CardContent>
-          </Card>
+    <div className="min-h-screen overflow-hidden flex flex-col px-4 py-6"
+      style={{ background: 'hsl(var(--background))' }}>
 
-          {/* Échiquier Responsive */}
-          <div className="flex-1 flex justify-center items-center p-2">
-            <div className={`
-              aspect-square bg-card rounded-xl border shadow-lg
-              w-full
-              min-w-[300px]
-              max-w-[90vw]
-              md:max-w-[75vw]
-              lg:max-w-[500px]
-              xl:max-w-[600px]
-              ${currentPlayer === 'white' ? 'border-primary/30' : 'border-muted'}
-            `}>
-              <div className="w-full h-full flex items-center justify-center">
-                {/* Placeholder for the chessboard component */}
-                <div className="text-muted-foreground text-lg">Chessboard Placeholder</div>
-              </div>
+      {/* Conteneur Principal */}
+      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
+        {/* Joueur Noir - En Haut */}
+        <Card className="w-full max-w-[400px] mb-4">
+          <CardHeader className="flex flex-row items-center justify-between p-3">
+            <div className="flex items-center gap-2">
+              <FiUser className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-base">Noir</CardTitle>
             </div>
-          </div>
+            <div className="flex items-center gap-2 text-sm">
+              <FiClock className="w-4 h-4" />
+              <span className="text-muted-foreground">15:00</span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            {/* Use game.turn() to determine active player */}
+            <div className={`h-1 rounded-full ${game.turn() === 'b' ? 'bg-primary' : 'bg-muted'}`} />
+          </CardContent>
+        </Card>
 
-          {/* Joueur Blanc */}
-          <Card className="w-full">
-            <CardHeader className="flex flex-row items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <FiUser className="w-5 h-5 text-muted-foreground" />
-                <CardTitle className="text-lg font-semibold">Blanc</CardTitle>
-              </div>
-              <div className="flex items-center gap-3 text-base">
-                <FiClock className="w-5 h-5" />
-                <span className="font-medium">14:30</span>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className={`h-2 rounded-full ${currentPlayer === 'white' ? 'bg-primary' : 'bg-muted'}`} />
-            </CardContent>
-          </Card>
+        {/* Échiquier */}
+        <div className="w-full flex justify-center">
+          <div className={`
+            aspect-square bg-card rounded-lg border-2 shadow-sm
+            w-full max-w-full
+            xs:max-w-[320px]
+            sm:max-w-[360px]
+            md:max-w-[400px]
+            ${game.turn() === 'w' ? 'border-primary/20' : 'border-muted'}
+          `}>
+             <Chessboard
+                position={game.fen()}
+                onPieceDrop={onDrop}
+                boardWidth={Math.min(window.innerWidth * 0.9, 400)} // Responsive width
+             />
+          </div>
         </div>
 
-        {/* Colonne Droite - Historique */}
-        <div className="flex flex-col gap-4 h-full mx-auto w-full max-w-[800px] lg:max-w-[400px]">
-          {/* Contrôles */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        {/* Joueur Blanc - En Bas */}
+        <Card className="w-full max-w-[400px] mt-4">
+          <CardHeader className="flex flex-row items-center justify-between p-3">
+            <div className="flex items-center gap-2">
+              <FiUser className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-base">Blanc</CardTitle>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <FiClock className="w-4 h-4" />
+              <span className="text-muted-foreground">14:30</span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+             {/* Use game.turn() to determine active player */}
+            <div className={`h-1 rounded-full ${game.turn() === 'w' ? 'bg-primary' : 'bg-muted'}`} />
+          </CardContent>
+        </Card>
+
+        {/* Contrôles Centrés */}
+        <div className="w-full flex flex-col sm:flex-row justify-center gap-3 mt-6">
+          <Button variant="default" className="gap-2 sm:w-auto">
             <NewGameModal />
-            <Button variant="secondary" className="gap-2">
-              <FiCornerUpLeft className="w-4 h-4" />
-              <span>Annuler Coup</span>
-            </Button>
-          </div>
-
-          {/* Historique des Coups */}
-          <Card className="flex-1 flex flex-col">
-            <Accordion type="single" collapsible>
-              <AccordionItem value="moves" className="border-0 flex-1 flex flex-col">
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <CardHeader className="sticky top-0 bg-background z-10 p-4 border-b">
-                    <AccordionTrigger className="hover:no-underline p-0">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3 text-base">
-                          <FiChevronDown className="h-5 w-5 shrink-0 transition-transform" />
-                          <span className="font-medium">Historique des coups</span>
-                        </div>
-                        <span className="text-muted-foreground">{moves.length} coups</span>
-                      </div>
-                    </AccordionTrigger>
-                  </CardHeader>
-
-                  <AccordionContent className="flex-1 overflow-auto">
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-3 gap-4 text-base">
-                        <div className="font-semibold text-center">Tour</div>
-                        <div className="font-semibold text-center">Blanc</div>
-                        <div className="font-semibold text-center">Noir</div>
-
-                        {moves.map((move) => (
-                          <div key={move.moveNumber} className="contents">
-                            <div className="text-center text-muted-foreground py-2">
-                              {move.moveNumber}.
-                            </div>
-                            <div className="text-center bg-muted/50 p-2 rounded-md">
-                              {move.white}
-                            </div>
-                            <div className="text-center bg-muted/50 p-2 rounded-md">
-                              {move.black}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </AccordionContent>
-                </div>
-              </AccordionItem>
-            </Accordion>
-          </Card>
+          </Button>
+          <Button variant="secondary" className="gap-2 sm:w-auto">
+            <FiCornerUpLeft className="w-4 h-4" />
+            <span>Annuler Coup</span>
+          </Button>
         </div>
+
+        {/* Historique */}
+        <Card className="w-full max-w-[600px] mt-6">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="moves">
+              <div className="max-h-[40vh] overflow-y-auto">
+                <CardHeader className="sticky top-0 bg-background z-10 p-3 border-b">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 text-sm">
+                        <FiChevronDown className="h-4 w-4 transition-transform" />
+                        <span>Historique des coups</span>
+                      </div>
+                      <span className="text-muted-foreground text-sm">{moves.length} coups</span>
+                    </div>
+                  </AccordionTrigger>
+                </CardHeader>
+
+                <AccordionContent>
+                  <CardContent className="p-3">
+                    <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                      <span className="font-medium text-center">Tour</span>
+                      <span className="font-medium text-center">Blanc</span>
+                      <span className="font-medium text-center">Noir</span>
+
+                      {moves.map((move) => (
+                        <>
+                          <span className="text-center text-muted-foreground">{move.moveNumber}.</span>
+                          <span className="text-center bg-muted p-1 rounded">{move.white}</span>
+                          <span className="text-center bg-muted p-1 rounded">{move.black}</span>
+                        </>
+                      ))}
+                    </div>
+                  </CardContent>
+                </AccordionContent>
+              </div>
+            </AccordionItem>
+          </Accordion>
+        </Card>
       </div>
     </div>
   );
