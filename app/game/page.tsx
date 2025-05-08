@@ -39,6 +39,23 @@ export default function ChessGame() {
     setMoves(formattedMoves);
   };
 
+  // Basic AI move function (random move)
+  const makeAIMove = () => {
+    const possibleMoves = game.moves();
+
+    // exit if the game is over
+    if (game.isGameOver() || game.isDraw() || possibleMoves.length === 0) return;
+
+    // Choose a random move
+    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+    // Apply the move
+    safeGameMutate((game) => {
+      game.move(randomMove);
+    });
+  };
+
+
   // Example move handler (will need more logic later)
   function onDrop(sourceSquare, targetSquare) {
     let move = null;
@@ -57,6 +74,9 @@ export default function ChessGame() {
     // The game state is updated asynchronously by setGame.
     // We need to wait for the state update to reflect the new history.
     // The useEffect below handles updating the history whenever the game state changes.
+
+    // Trigger AI move after a short delay
+    setTimeout(makeAIMove, 300); // Simulate AI thinking time
 
     // TODO: Check for game over conditions
 
