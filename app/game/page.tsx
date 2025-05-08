@@ -120,6 +120,23 @@ export default function ChessGame() {
     return true; // Return move object if valid
   }
 
+  // Undo the last move
+  const undoLastMove = () => {
+    // Prevent undo if it's AI's turn or game is over
+    if (isAITurn || game.isGameOver()) return;
+
+    safeGameMutate((game) => {
+      game.undo();
+    });
+    // After undoing, if it's now the AI's turn, trigger AI move
+    // This handles the case where the human undid the move that ended the game
+    // or undid their move before the AI had a chance to move.
+    if (!game.isGameOver() && game.turn() === 'b') {
+       // Add a slight delay before AI moves after undo
+       setTimeout(makeAIMove, 300);
+    }
+  };
+
   // Reset game state and set new difficulty
   const resetGame = (difficulty: GameDifficulty = GameDifficulty.Medium) => {
     setGame(new Chess());
@@ -224,7 +241,12 @@ export default function ChessGame() {
         <div className="w-full flex flex-col sm:flex-row justify-center gap-3 mt-6">
           {/* NewGameModal now handles game reset internally */}
           <NewGameModal />
-          <Button variant="secondary" className="gap-2 sm:w-auto">
+          <Button
+            variant="secondary"
+            className="gap-2 sm:w-auto"
+            onClick={undoLastMove}
+            disabled={game.history().length === 0 || isAITurn || game.isGameOver()} // Disable if no moves or AI turn or game over
+          >
             <FiCornerUpLeft className="w-4 h-4" />
             <span>Annuler Coup</span>
           </Button>
@@ -252,7 +274,6 @@ export default function ChessGame() {
                     <div className="grid grid-cols-3 gap-x-4 gap-y-2 text-sm">
                       <span className="font-medium text-center">Tour</span>
                       <span className="font-medium text-center">Blanc</span>
-                      <span className="text-center bg-muted p-1 rounded">e4</span>
                       <span className="font-medium text-center">Noir</span>
 
                       {moves.map((move, index) => (
