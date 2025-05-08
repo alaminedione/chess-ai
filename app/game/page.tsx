@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { NewGameModal } from '@/components/NewGameModal';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { findBestMove } from '@/lib/ai'; // Import the new AI function
 
 type GameStatus = 'playing' | 'checkmate' | 'stalemate' | 'threefold repetition' | 'insufficient material' | 'fifty-move rule' | 'draw' | 'resignation';
 
@@ -23,6 +24,7 @@ export default function ChessGame() {
   const [game, setGame] = useState(new Chess());
   const [moves, setMoves] = useState([]); // Start with empty moves
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
+  const [isAITurn, setIsAITurn] = useState(false); // State to manage AI turn
 
   // Helper to update game state and return the result of the modification
   function safeGameMutate(modify) {
@@ -70,30 +72,24 @@ export default function ChessGame() {
     }
   };
 
-  // Basic AI move function (random move)
+  // AI move function using the minimax algorithm
   const makeAIMove = () => {
-    const possibleMoves = game.moves();
+    setIsAITurn(true); // Indicate AI is thinking
+    const bestMove = findBestMove(game, 2); // Use minimax with depth 2
 
-    // exit if the game is over
-    if (game.isGameOver() || game.isDraw() || possibleMoves.length === 0) {
-      checkGameOver();
-      return;
+    if (bestMove) {
+      safeGameMutate((game) => {
+        game.move(bestMove);
+      });
     }
-
-    // Choose a random move
-    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-
-    // Apply the move
-    safeGameMutate((game) => {
-      game.move(randomMove);
-    });
+    setIsAITurn(false); // AI turn ends
   };
 
 
   // Example move handler (will need more logic later)
   function onDrop(sourceSquare, targetSquare) {
-    // Prevent moves if the game is over
-    if (game.isGameOver() || gameStatus !== 'playing') return false;
+    // Prevent moves if the game is over or it's AI's turn
+    if (game.isGameOver() || gameStatus !== 'playing' || isAITurn) return false;
 
     let move = null;
     safeGameMutate((game) => {
@@ -110,8 +106,9 @@ export default function ChessGame() {
     // Check for game over after human move
     checkGameOver();
 
-    // Trigger AI move after a short delay if the game is not over
-    if (!game.isGameOver()) {
+    // Trigger AI move after a short delay if the game is not over and it's AI's turn
+    // The game.turn() check ensures AI only moves when it's their turn (Black in this case)
+    if (!game.isGameOver() && game.turn() === 'b') {
       setTimeout(makeAIMove, 300); // Simulate AI thinking time
     }
 
@@ -124,12 +121,12 @@ export default function ChessGame() {
     setGame(new Chess());
     setMoves([]);
     setGameStatus('playing');
+    setIsAITurn(false); // Reset AI turn state
   };
 
-  // Update history whenever the game state changes
+  // Update history and check game over whenever the game state changes
   useEffect(() => {
     updateMovesHistory();
-    // Also check game over status after any state change (including AI move)
     checkGameOver();
   }, [game]); // Dependency on game ensures it runs after state updates
 
@@ -175,6 +172,7 @@ export default function ChessGame() {
                 position={game.fen()}
                 onPieceDrop={onDrop}
                 boardWidth={Math.min(window.innerWidth * 0.9, 400)} // Responsive width
+                arePiecesDraggable={!game.isGameOver() && gameStatus === 'playing' && !isAITurn} // Disable drag during AI turn or game over
              />
           </div>
         </div>
@@ -185,6 +183,15 @@ export default function ChessGame() {
             <CardContent className="p-3">
               <p className="text-lg font-semibold">Game Over!</p>
               <p className="text-muted-foreground capitalize">{gameStatus}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Thinking Indicator */}
+        {isAITurn && gameStatus === 'playing' && (
+           <Card className="w-full max-w-[400px] mt-4 text-center">
+            <CardContent className="p-3">
+              <p className="text-lg font-semibold">AI is thinking...</p>
             </CardContent>
           </Card>
         )}
